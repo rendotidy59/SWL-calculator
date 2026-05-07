@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SWL Mobile Crane Simulator — K3 Safety Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #f0f4f9;
+    --surface:   #ffffff;
+    --surface-2: #f8fafc;
+    --border:    #e2e8f0;
+    --border-lt: #f1f5f9;
+
+    --blue:      #2563eb;
+    --blue-lt:   #eff6ff;
+    --blue-mid:  #bfdbfe;
+
+    --safe:      #059669;
+    --safe-bg:   #ecfdf5;
+    --safe-ring: #a7f3d0;
+
+    --warn:      #d97706;
+    --warn-bg:   #fffbeb;
+    --warn-ring: #fde68a;
+
+    --danger:    #dc2626;
+    --danger-bg: #fef2f2;
+    --danger-ring:#fecaca;
+
+    --t1: #0f172a;
+    --t2: #475569;
+    --t3: #94a3b8;
+    --t4: #cbd5e1;
+
+    --sh-sm: 0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04);
+    --sh-md: 0 4px 16px rgba(15,23,42,.08),0 2px 6px rgba(15,23,42,.04);
+
+    --r:    14px;
+    --r-sm:  8px;
+  }
+
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+  body{
+    background:var(--bg);
+    color:var(--t1);
+    font-family:'Plus Jakarta Sans',sans-serif;
+    font-size:14px;
+    line-height:1.5;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  body::before{
+    content:'';
+    position:fixed;inset:0;
+    background-image:radial-gradient(circle,#c8d6e5 1px,transparent 1px);
+    background-size:28px 28px;
+    opacity:.4;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  .wrap{position:relative;z-index:1;max-width:1360px;margin:0 auto;padding:28px 24px 48px}
+
+  /* HEADER */
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px}
+
+  .brand{display:flex;align-items:center;gap:14px}
+
+  .brand-logo{
+    width:48px;height:48px;
+    background:linear-gradient(135deg,#2563eb,#1d4ed8);
+    border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:22px;
+    box-shadow:0 4px 14px rgba(37,99,235,.3);
+  }
+
+  .brand-text h1{font-family:'Outfit',sans-serif;font-size:1.45rem;font-weight:700;color:var(--t1);letter-spacing:-.3px;line-height:1.1}
+  .brand-text p{font-size:.72rem;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;font-weight:500}
+
+  .badges{display:flex;gap:8px;flex-wrap:wrap}
+  .badge{padding:5px 11px;border-radius:20px;font-size:.67rem;font-weight:600;letter-spacing:.8px;text-transform:uppercase}
+  .badge-blue{background:var(--blue-lt);color:var(--blue)}
+  .badge-gray{background:var(--border-lt);color:var(--t2)}
+
+  /* LAYOUT */
+  .grid{display:grid;grid-template-columns:320px 1fr;gap:20px;align-items:start}
+
+  /* CARD */
+  .card{
+    background:var(--surface);
+    border-radius:var(--r);
+    box-shadow:var(--sh-sm);
+    border:1px solid var(--border);
+    overflow:hidden;
+    transition:box-shadow .25s;
+    animation:fadeUp .35s ease both;
+  }
+  .card:hover{box-shadow:var(--sh-md)}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  .card-head{
+    padding:16px 20px 12px;
+    border-bottom:1px solid var(--border-lt);
+    display:flex;align-items:center;gap:8px;
+  }
+
+  .ch-icon{
+    width:28px;height:28px;border-radius:7px;
+    background:var(--blue-lt);
+    display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;
+  }
+
+  .card-title{font-family:'Outfit',sans-serif;font-size:.78rem;font-weight:600;color:var(--t2);letter-spacing:.8px;text-transform:uppercase}
+
+  .card-body{padding:20px}
+
+  /* CONTROLS */
+  .cg{margin-bottom:20px}
+  .cg:last-child{margin-bottom:0}
+
+  .cl{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;font-size:.8rem;font-weight:500;color:var(--t2)}
+
+  .cv{font-family:'DM Mono',monospace;font-size:.82rem;color:var(--blue);background:var(--blue-lt);padding:2px 8px;border-radius:4px}
+
+  input[type=range]{
+    -webkit-appearance:none;
+    width:100%;height:5px;
+    background:linear-gradient(to right,var(--blue) 0%,var(--blue) var(--pct,0%),var(--border) var(--pct,0%),var(--border) 100%);
+    border-radius:99px;outline:none;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:18px;height:18px;
+    background:var(--surface);
+    border:2.5px solid var(--blue);
+    border-radius:50%;
+    cursor:pointer;
+    box-shadow:0 1px 4px rgba(37,99,235,.25);
+    transition:transform .15s,box-shadow .15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2);box-shadow:0 2px 10px rgba(37,99,235,.35)}
+
+  .rg{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+
+  .ro{cursor:pointer}
+  .ro input{display:none}
+  .ro span{
+    display:flex;align-items:center;justify-content:center;gap:5px;
+    padding:8px 10px;
+    border:1.5px solid var(--border);
+    border-radius:var(--r-sm);
+    font-size:.72rem;font-weight:500;color:var(--t2);
+    background:var(--surface-2);
+    transition:all .18s;cursor:pointer;text-align:center;
+  }
+  .ro input:checked+span{border-color:var(--blue);background:var(--blue-lt);color:var(--blue);font-weight:600}
+
+  .div{height:1px;background:var(--border-lt);margin:18px 0}
+
+  .sl{font-size:.7rem;font-weight:600;color:var(--t3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:11px}
+
+  /* RESULT HERO */
+  .rh{
+    border-radius:var(--r);padding:22px 20px 18px;margin-bottom:16px;
+    display:flex;align-items:center;justify-content:space-between;
+    transition:background .4s,border-color .4s,box-shadow .4s;
+    border:1.5px solid;
+  }
+  .rh.safe  {background:var(--safe-bg);  border-color:var(--safe-ring);  box-shadow:0 4px 20px rgba(5,150,105,.08)}
+  .rh.warn  {background:var(--warn-bg);  border-color:var(--warn-ring);  box-shadow:0 4px 20px rgba(217,119,6,.10)}
+  .rh.danger{background:var(--danger-bg);border-color:var(--danger-ring);box-shadow:0 4px 20px rgba(220,38,38,.10)}
+
+  .rh-left .rhl{font-size:.67rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;transition:color .3s}
+  .rh-left .rhv{font-family:'Outfit',sans-serif;font-size:3rem;font-weight:700;line-height:1;transition:color .3s;letter-spacing:-1px}
+  .rh-left .rhu{font-size:.72rem;font-weight:500;margin-top:3px;transition:color .3s}
+
+  .safe   .rhl,.safe   .rhv,.safe   .rhu{color:var(--safe)}
+  .warn   .rhl,.warn   .rhv,.warn   .rhu{color:var(--warn)}
+  .danger .rhl,.danger .rhv,.danger .rhu{color:var(--danger)}
+
+  .chip{
+    padding:6px 12px;border-radius:20px;
+    font-size:.72rem;font-weight:700;letter-spacing:.5px;
+    display:flex;align-items:center;gap:5px;transition:all .3s;
+  }
+  .safe   .chip{background:#d1fae5;color:var(--safe)}
+  .warn   .chip{background:#fef3c7;color:var(--warn)}
+  .danger .chip{background:#fee2e2;color:var(--danger)}
+
+  .sdot{width:7px;height:7px;border-radius:50%;transition:background .3s;animation:blink 1.6s ease-in-out infinite}
+  .safe   .sdot{background:var(--safe)}
+  .warn   .sdot{background:var(--warn)}
+  .danger .sdot{background:var(--danger)}
+
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+  /* METER */
+  .mw{margin-bottom:16px}
+  .mh{display:flex;justify-content:space-between;font-size:.72rem;font-weight:500;color:var(--t2);margin-bottom:8px}
+  .mp{font-family:'DM Mono',monospace;font-size:.82rem;font-weight:500;transition:color .3s}
+  .mt{height:10px;background:var(--border-lt);border-radius:99px;overflow:hidden}
+  .mf{height:100%;border-radius:99px;width:0%;transition:width .5s cubic-bezier(.4,0,.2,1),background .4s}
+  .ml{display:flex;justify-content:space-between;margin-top:5px}
+  .ml span{font-size:.62rem;font-weight:500;color:var(--t4)}
+
+  /* INFO GRID */
+  .ig{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+  .ic{background:var(--surface-2);border:1px solid var(--border-lt);border-radius:var(--r-sm);padding:11px 13px;transition:border-color .2s}
+  .ic:hover{border-color:var(--border)}
+  .icl{font-size:.62rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--t3);margin-bottom:4px}
+  .icv{font-family:'DM Mono',monospace;font-size:.95rem;font-weight:500;color:var(--t1)}
+
+  /* CHECKLIST */
+  .cl-list{border:1px solid var(--border-lt);border-radius:var(--r-sm);overflow:hidden;margin-bottom:16px}
+  .cli{display:flex;align-items:center;gap:10px;padding:9px 13px;font-size:.78rem;font-weight:500;color:var(--t2);border-bottom:1px solid var(--border-lt);transition:background .15s}
+  .cli:last-child{border-bottom:none}
+  .cli:hover{background:var(--surface-2)}
+
+  .ci{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;transition:all .25s}
+  .ci.ok  {background:#d1fae5;color:var(--safe)}
+  .ci.warn{background:#fef3c7;color:var(--warn)}
+  .ci.fail{background:#fee2e2;color:var(--danger)}
+
+  /* FORMULA */
+  .fml{background:var(--surface-2);border:1px solid var(--border-lt);border-radius:var(--r-sm);padding:13px 14px;font-family:'DM Mono',monospace;font-size:.7rem;color:var(--t2);line-height:1.9}
+  .fml .fl{color:var(--blue);font-weight:500}
+
+  /* CANVAS */
+  .cc{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh-sm);border:1px solid var(--border);overflow:hidden;margin-bottom:20px;transition:box-shadow .25s;animation:fadeUp .35s .1s ease both}
+  .cc:hover{box-shadow:var(--sh-md)}
+  #craneCanvas{display:block;width:100%;height:460px}
+
+  /* TABLE */
+  .tc{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh-sm);border:1px solid var(--border);overflow:hidden;transition:box-shadow .25s;animation:fadeUp .35s .15s ease both}
+  .tc:hover{box-shadow:var(--sh-md)}
+
+  table{width:100%;border-collapse:collapse}
+  thead th{padding:11px 16px;text-align:left;font-size:.67rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--t3);background:var(--surface-2);border-bottom:1px solid var(--border-lt)}
+  tbody td{padding:10px 16px;border-bottom:1px solid var(--border-lt);font-size:.8rem;color:var(--t2);transition:background .15s}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover td{background:var(--surface-2)}
+  tbody tr.ra td{background:var(--blue-lt);color:var(--blue);font-weight:600}
+
+  .mono{font-family:'DM Mono',monospace}
+
+  .cb{height:6px;background:var(--border-lt);border-radius:99px;overflow:hidden;min-width:100px}
+  .cbf{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--blue),#60a5fa);transition:width .5s}
+
+  .tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:.68rem;font-weight:600}
+  .ts{background:#d1fae5;color:var(--safe)}
+  .td{background:#fee2e2;color:var(--danger)}
+
+  /* DISCLAIMER */
+  .disc{margin-top:20px;background:var(--surface);border:1px solid var(--warn-ring);border-radius:var(--r-sm);padding:13px 16px;font-size:.7rem;color:var(--t2);line-height:1.65;display:flex;gap:10px;align-items:flex-start}
+  .di{font-size:14px;flex-shrink:0;margin-top:1px;color:var(--warn)}
+
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="brand-logo">🏗️</div>
+      <div class="brand-text">
+        <h1>SWL Crane Simulator</h1>
+        <p>Mobile Crane · Safe Working Load · K3</p>
+      </div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-blue">PP No. 50/2012</span>
+      <span class="badge badge-gray">ISO 4305</span>
+      <span class="badge badge-gray">ASME B30.5</span>
+    </div>
+  </header>
+
+  <div class="grid">
+
+    <!-- LEFT -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+
+      <!-- PARAMS -->
+      <div class="card">
+        <div class="card-head">
+          <div class="ch-icon">⚙️</div>
+          <span class="card-title">Parameter Crane</span>
+        </div>
+        <div class="card-body">
+
+          <div class="cg">
+            <div class="cl">Kapasitas Rated <span class="cv" id="v-cap">100 ton</span></div>
+            <input type="range" id="sl-cap" min="20" max="300" value="100" step="10">
+          </div>
+          <div class="cg">
+            <div class="cl">Panjang Boom <span class="cv" id="v-boom">30 m</span></div>
+            <input type="range" id="sl-boom" min="10" max="60" value="30" step="1">
+          </div>
+          <div class="cg">
+            <div class="cl">Sudut Boom (dari horizontal) <span class="cv" id="v-angle">65°</span></div>
+            <input type="range" id="sl-angle" min="20" max="80" value="65" step="1">
+          </div>
+          <div class="cg">
+            <div class="cl">Beban Aktual <span class="cv" id="v-load">30 ton</span></div>
+            <input type="range" id="sl-load" min="0" max="300" value="30" step="1">
+          </div>
+
+          <div class="div"></div>
+          <div class="sl">Kondisi Outrigger</div>
+          <div class="rg" style="margin-bottom:16px">
+            <label class="ro"><input type="radio" name="outrigger" value="full" checked><span>🟢 Full Extended</span></label>
+            <label class="ro"><input type="radio" name="outrigger" value="partial"><span>🟡 Partial 75%</span></label>
+            <label class="ro"><input type="radio" name="outrigger" value="retracted"><span>🔴 Retracted</span></label>
+            <label class="ro"><input type="radio" name="outrigger" value="crawler"><span>⚪ Crawler</span></label>
+          </div>
+
+          <div class="sl">Kondisi Tanah</div>
+          <div class="rg">
+            <label class="ro"><input type="radio" name="ground" value="firm" checked><span>💪 Keras / Firm</span></label>
+            <label class="ro"><input type="radio" name="ground" value="soft"><span>🌿 Lunak / Soft</span></label>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- RESULTS -->
+      <div class="card" style="animation-delay:.05s">
+        <div class="card-head">
+          <div class="ch-icon">📊</div>
+          <span class="card-title">Hasil Kalkulasi SWL</span>
+        </div>
+        <div class="card-body">
+
+          <div class="rh safe" id="rh">
+            <div class="rh-left">
+              <div class="rhl">Safe Working Load</div>
+              <div class="rhv" id="rh-val">—</div>
+              <div class="rhu">Metric Ton</div>
+            </div>
+            <div class="rh-right">
+              <div class="chip">
+                <div class="sdot"></div>
+                <span id="rh-status">AMAN</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mw">
+            <div class="mh">
+              <span>Utilisasi Beban</span>
+              <span class="mp" id="m-pct">0%</span>
+            </div>
+            <div class="mt"><div class="mf" id="m-fill"></div></div>
+            <div class="ml"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+          </div>
+
+          <div class="ig">
+            <div class="ic"><div class="icl">Radius Angkat</div><div class="icv" id="ic-r">— m</div></div>
+            <div class="ic"><div class="icl">Derating Factor</div><div class="icv" id="ic-d">— %</div></div>
+            <div class="ic"><div class="icl">Tip Height</div><div class="icv" id="ic-h">— m</div></div>
+            <div class="ic"><div class="icl">Margin Sisa</div><div class="icv" id="ic-m">— ton</div></div>
+          </div>
+
+          <div class="cl-list">
+            <div class="cli"><div class="ci ok" id="ck-swl">✓</div><span>Beban ≤ SWL</span></div>
+            <div class="cli"><div class="ci ok" id="ck-rad">✓</div><span>Radius dalam batas operasi</span></div>
+            <div class="cli"><div class="ci ok" id="ck-out">✓</div><span>Outrigger sesuai prosedur</span></div>
+            <div class="cli"><div class="ci ok" id="ck-gnd">✓</div><span>Kondisi tanah mendukung</span></div>
+            <div class="cli"><div class="ci ok" id="ck-ang">✓</div><span>Sudut boom optimal (60–75°)</span></div>
+          </div>
+
+          <div class="fml">
+            <span class="fl">SWL</span> = Kapasitas × Derating(Radius) × F(Outrigger) × F(Tanah)<br>
+            <span class="fl">Radius</span> = Boom × cos(Sudut)<br>
+            <span class="fl">Height</span> = Boom × sin(Sudut)
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div>
+      <div class="cc">
+        <canvas id="craneCanvas"></canvas>
+      </div>
+
+      <div class="tc">
+        <div class="card-head" style="padding:16px 20px 12px">
+          <div class="ch-icon">📋</div>
+          <span class="card-title">Load Chart — Kapasitas per Radius</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Radius (m)</th><th>SWL (ton)</th><th>% Kapasitas</th>
+              <th style="min-width:110px">Grafik</th><th>Status Beban</th>
+            </tr>
+          </thead>
+          <tbody id="tbl"></tbody>
+        </table>
+      </div>
+
+      <div class="disc">
+        <span class="di">⚠️</span>
+        <span><strong>Peringatan:</strong> Simulator ini hanya untuk tujuan pendidikan dan pelatihan K3. Data aktual wajib mengacu pada Load Chart resmi pabrikan crane. Selalu konsultasikan dengan Rigger/Operator bersertifikat dan Ahli K3 Muda/Utama sebelum pelaksanaan lifting operation. Wajib mematuhi PP No.50/2012 dan Permenaker No.8/2020.</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const S = { cap:100, boom:30, angle:65, load:30, outrigger:'full', ground:'firm' };
+const $ = id => document.getElementById(id);
+
+function deratingByRadius(r, maxR) {
+  return Math.max(.08, Math.min(1, Math.pow(1 - (r/maxR)*.85, 1.6)));
+}
+const outF = o => ({ full:1.0, partial:.75, retracted:.5, crawler:.85 }[o]);
+const gndF = g => g === 'firm' ? 1.0 : .75;
+
+function chartData(cap) {
+  const Rs = [3,4,5,6,8,10,12,15,18,21,25,30];
+  const Fs = [1.0,.92,.84,.76,.64,.54,.46,.37,.29,.23,.17,.12];
+  return Rs.map((r,i)=>({ r, swl: Math.round(cap*Fs[i]*10)/10 }));
+}
+
+function calc() {
+  const a = S.angle*Math.PI/180;
+  const radius = Math.round(S.boom*Math.cos(a)*10)/10;
+  const height = Math.round(S.boom*Math.sin(a)*10)/10;
+  const maxR   = S.boom*Math.cos(20*Math.PI/180);
+  const der    = deratingByRadius(radius, maxR);
+  const swl    = Math.round(S.cap*der*outF(S.outrigger)*gndF(S.ground)*10)/10;
+  const pct    = Math.min(300, Math.round(S.load/swl*100));
+  return { radius, height, der, swl, pct };
+}
+
+function chk(id, st) {
+  const el=$(id); el.className=`ci ${st}`;
+  el.textContent = st==='ok'?'✓':st==='fail'?'✗':'!';
+}
+
+function update() {
+  const r = calc();
+  let lvl='safe', chip='AMAN ✓';
+  if (r.pct>100){lvl='danger';chip='BAHAYA! ✗';}
+  else if(r.pct>85){lvl='warn';chip='PERINGATAN ⚠';}
+
+  $('rh').className=`rh ${lvl}`;
+  $('rh-val').textContent=r.swl.toFixed(1);
+  $('rh-status').textContent=chip;
+
+  const c=Math.min(100,r.pct);
+  const fill=$('m-fill');
+  fill.style.width=c+'%';
+  fill.style.background=lvl==='safe'
+    ?'linear-gradient(90deg,#059669,#34d399)'
+    :lvl==='warn'
+    ?'linear-gradient(90deg,#d97706,#fbbf24)'
+    :'linear-gradient(90deg,#dc2626,#f87171)';
+  $('m-pct').textContent=r.pct+'%';
+  $('m-pct').style.color=lvl==='safe'?'var(--safe)':lvl==='warn'?'var(--warn)':'var(--danger)';
+
+  $('ic-r').textContent=r.radius+' m';
+  $('ic-d').textContent=Math.round(r.der*100)+'%';
+  $('ic-h').textContent=r.height+' m';
+  const mg=Math.round((r.swl-S.load)*10)/10;
+  $('ic-m').textContent=mg+' ton';
+  $('ic-m').style.color=mg<0?'var(--danger)':mg<r.swl*.2?'var(--warn)':'var(--safe)';
+
+  chk('ck-swl', S.load<=r.swl?'ok':'fail');
+  chk('ck-rad', r.radius<=S.boom*.9?'ok':'warn');
+  chk('ck-out', S.outrigger==='full'?'ok':S.outrigger==='retracted'?'fail':'warn');
+  chk('ck-gnd', S.ground==='firm'?'ok':'warn');
+  chk('ck-ang', S.angle>=60&&S.angle<=75?'ok':'warn');
+
+  buildTable(r);
+  drawCrane(r, lvl);
+}
+
+function buildTable(cr) {
+  const oF=outF(S.outrigger), gF=gndF(S.ground);
+  const tbody=$('tbl');
+  tbody.innerHTML='';
+  chartData(S.cap).forEach(row=>{
+    const adj=Math.round(row.swl*oF*gF*10)/10;
+    const bp=Math.round(adj/S.cap*100);
+    const active=Math.abs(row.r-cr.radius)<1.5;
+    const tr=document.createElement('tr');
+    if(active) tr.className='ra';
+    tr.innerHTML=`
+      <td class="mono">${row.r} m ${active?'<span style="color:var(--blue);font-size:.65rem;font-weight:700"> ◀ aktif</span>':''}</td>
+      <td class="mono">${adj}</td>
+      <td class="mono">${Math.round(adj/S.cap*100)}%</td>
+      <td><div class="cb"><div class="cbf" style="width:${bp}%"></div></div></td>
+      <td>${S.load<=adj
+        ?'<span class="tag ts">✓ Aman</span>'
+        :'<span class="tag td">✗ Over</span>'}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function drawCrane(cr, lvl) {
+  const canvas=$('craneCanvas');
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.clientWidth, H=canvas.clientHeight;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+
+  // BG
+  ctx.fillStyle='#f8fafc'; ctx.fillRect(0,0,W,H);
+  for(let x=0;x<=W;x+=28) for(let y=0;y<=H;y+=28){
+    ctx.beginPath(); ctx.arc(x,y,1,0,Math.PI*2);
+    ctx.fillStyle='#dde3ec'; ctx.fill();
+  }
+
+  const sc=Math.min(W,H)/100;
+  const gY=H*.76, pX=W*.30, pY=gY-9*sc;
+  const aR=S.angle*Math.PI/180;
+  const bS=S.boom*sc*.80;
+  const tX=pX+bS*Math.cos(aR), tY=pY-bS*Math.sin(aR);
+
+  const cols={safe:'#059669',warn:'#d97706',danger:'#dc2626'};
+  const colsLt={safe:'#d1fae5',warn:'#fef3c7',danger:'#fee2e2'};
+  const c=cols[lvl], cL=colsLt[lvl];
+
+  // Ground
+  const gg=ctx.createLinearGradient(0,gY,0,gY+50);
+  gg.addColorStop(0,'#e2e8f0'); gg.addColorStop(1,'#f0f4f9');
+  ctx.fillStyle=gg; ctx.fillRect(0,gY,W,H-gY);
+  ctx.strokeStyle='#cbd5e1'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(0,gY); ctx.lineTo(W,gY); ctx.stroke();
+  ctx.fillStyle='#94a3b8'; ctx.font=`${sc*1.1}px Plus Jakarta Sans`;
+  ctx.fillText('GROUND LEVEL',12,gY+14);
+
+  // Outrigger pads
+  const oc={full:'#059669',partial:'#d97706',retracted:'#dc2626',crawler:'#64748b'}[S.outrigger];
+  const ow={full:70,partial:45,retracted:14,crawler:80}[S.outrigger];
+  [-1,1].forEach(side=>{
+    const ox=pX+side*ow*sc*.45, pw=ow*sc*.45;
+    ctx.fillStyle=oc+'22'; ctx.strokeStyle=oc; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.roundRect(ox-pw/2,gY,pw,7,2); ctx.fill(); ctx.stroke();
+  });
+
+  // Body
+  const bW=24*sc, bH=7*sc, bX=pX-bW/2, bY=gY-bH;
+  ctx.fillStyle='#e2e8f0'; ctx.strokeStyle='#cbd5e1'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.roundRect(bX,bY,bW,bH,3); ctx.fill(); ctx.stroke();
+
+  // Cabin
+  ctx.fillStyle='#dbeafe'; ctx.strokeStyle='#93c5fd';
+  ctx.beginPath(); ctx.roundRect(bX+bW*.54,bY-5*sc,8*sc,5*sc,[3,3,0,0]); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='rgba(147,197,253,.35)';
+  ctx.fillRect(bX+bW*.59,bY-4.2*sc,5.2*sc,3.2*sc);
+
+  // Wheels
+  [.12,.38,.65,.88].forEach(t=>{
+    ctx.beginPath(); ctx.arc(bX+bW*t,gY+2,2.8*sc*.6,0,Math.PI*2);
+    ctx.fillStyle='#94a3b8'; ctx.fill();
+    ctx.strokeStyle='#64748b'; ctx.lineWidth=1; ctx.stroke();
+  });
+
+  // Turntable
+  ctx.beginPath(); ctx.arc(pX,pY,3.5*sc*.6,0,Math.PI*2);
+  ctx.fillStyle='#e2e8f0'; ctx.fill();
+  ctx.strokeStyle='#2563eb'; ctx.lineWidth=1.5; ctx.stroke();
+
+  // Boom glow
+  ctx.beginPath(); ctx.moveTo(pX,pY); ctx.lineTo(tX,tY);
+  ctx.strokeStyle=c+'20'; ctx.lineWidth=14; ctx.lineCap='round'; ctx.stroke();
+  ctx.lineCap='butt';
+
+  // Boom main
+  ctx.beginPath(); ctx.moveTo(pX,pY); ctx.lineTo(tX,tY);
+  ctx.strokeStyle='#f59e0b'; ctx.lineWidth=5; ctx.stroke();
+
+  // Lattice
+  for(let i=1;i<9;i++){
+    const t=i/9, lx=pX+(tX-pX)*t, ly=pY+(tY-pY)*t, p=5*sc*.28;
+    ctx.beginPath();
+    ctx.moveTo(lx-p*Math.sin(aR), ly-p*Math.cos(aR));
+    ctx.lineTo(lx+p*Math.sin(aR), ly+p*Math.cos(aR));
+    ctx.strokeStyle='#d97706'; ctx.lineWidth=1; ctx.stroke();
+  }
+
+  // Tip cap
+  ctx.beginPath(); ctx.arc(tX,tY,3*sc*.5,0,Math.PI*2);
+  ctx.fillStyle='#f59e0b'; ctx.fill();
+
+  // Load line
+  const ll=Math.min(cr.height*.35,10)*sc;
+  ctx.beginPath(); ctx.moveTo(tX,tY); ctx.lineTo(tX,tY+ll);
+  ctx.strokeStyle='#94a3b8'; ctx.lineWidth=1.5;
+  ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
+
+  // Load block
+  const ls=Math.max(3.5,Math.min(9,(S.load/S.cap)*18))*sc*.5;
+  const lY=tY+ll;
+  ctx.fillStyle=cL; ctx.strokeStyle=c; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.roundRect(tX-ls,lY,ls*2,ls*1.5,3); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(tX,lY,3,0,Math.PI*2); ctx.fillStyle=c; ctx.fill();
+  ctx.fillStyle=c; ctx.font=`600 ${sc*1.5}px Outfit`;
+  ctx.textAlign='center'; ctx.fillText(`${S.load} t`,tX,lY+ls*2.4); ctx.textAlign='left';
+
+  // Radius dim line
+  const dlY=gY+22;
+  ctx.strokeStyle='#94a3b8'; ctx.lineWidth=1; ctx.setLineDash([5,4]);
+  [[pX,gY+4,pX,dlY+4],[tX,gY+4,tX,dlY+4],[pX,dlY+4,tX,dlY+4]].forEach(([x1,y1,x2,y2])=>{
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  });
+  ctx.setLineDash([]);
+  ctx.fillStyle='#2563eb'; ctx.font=`600 ${sc*1.35}px DM Mono`;
+  ctx.textAlign='center'; ctx.fillText(`R = ${cr.radius} m`,(pX+tX)/2,dlY+17); ctx.textAlign='left';
+
+  // Height dim
+  ctx.strokeStyle='#94a3b8'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(tX+14,pY); ctx.lineTo(tX+14,tY); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#64748b'; ctx.font=`${sc*1.1}px DM Mono`;
+  ctx.save(); ctx.translate(tX+24,(pY+tY)/2); ctx.rotate(-Math.PI/2);
+  ctx.textAlign='center'; ctx.fillText(`H = ${cr.height} m`,0,0); ctx.restore();
+
+  // Angle arc
+  ctx.beginPath(); ctx.arc(pX,pY,18*sc*.5,0,-aR,true);
+  ctx.strokeStyle='#64748b'; ctx.lineWidth=1; ctx.stroke();
+  ctx.fillStyle='#64748b'; ctx.font=`${sc*1.1}px DM Mono`;
+  ctx.fillText(`${S.angle}°`,pX+12,pY-7);
+
+  // SWL Overlay card
+  const ix=W-155, iy=16;
+  ctx.shadowColor='rgba(15,23,42,.1)'; ctx.shadowBlur=14; ctx.shadowOffsetY=4;
+  ctx.fillStyle='rgba(255,255,255,.96)';
+  ctx.beginPath(); ctx.roundRect(ix,iy,140,72,10); ctx.fill();
+  ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+  ctx.strokeStyle=c+'55'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.roundRect(ix,iy,140,72,10); ctx.stroke();
+
+  ctx.fillStyle='#94a3b8'; ctx.font=`600 ${sc*1.0}px Plus Jakarta Sans`;
+  ctx.fillText('SWL',ix+12,iy+21);
+  ctx.fillStyle=c; ctx.font=`700 ${sc*2.8}px Outfit`;
+  ctx.fillText(`${cr.swl.toFixed(1)} t`,ix+12,iy+53);
+  ctx.fillStyle='#94a3b8'; ctx.font=`500 ${sc*1.0}px Plus Jakarta Sans`;
+  ctx.fillText(`${cr.pct}% utilisasi`,ix+12,iy+68);
+
+  // Watermark
+  ctx.fillStyle='rgba(37,99,235,.04)'; ctx.font=`700 ${sc*5.5}px Outfit`;
+  ctx.textAlign='center'; ctx.fillText('MOBILE CRANE',W/2,H*.96); ctx.textAlign='left';
+}
+
+// Track fill helper
+function trackFill(el) {
+  const pct=((+el.value - +el.min)/(+el.max - +el.min)*100).toFixed(1);
+  el.style.setProperty('--pct', pct+'%');
+}
+
+// Bind sliders
+[['sl-cap','cap','v-cap',' ton'],['sl-boom','boom','v-boom',' m'],['sl-angle','angle','v-angle','°'],['sl-load','load','v-load',' ton']]
+  .forEach(([id,key,vid,suf])=>{
+    const el=$(id); trackFill(el);
+    el.addEventListener('input',()=>{
+      S[key]=+el.value; $(vid).textContent=el.value+suf; trackFill(el);
+      if(key==='cap') $('sl-load').max=S.cap*1.5;
+      update();
+    });
+  });
+
+document.querySelectorAll('input[name=outrigger]').forEach(el=>el.addEventListener('change',()=>{S.outrigger=el.value;update()}));
+document.querySelectorAll('input[name=ground]').forEach(el=>el.addEventListener('change',()=>{S.ground=el.value;update()}));
+window.addEventListener('resize', update);
+update();
+</script>
+</body>
+</html>
